@@ -1,0 +1,22 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    uses: dev2b-tec/core-cicd-templates/.github/workflows/docker-deploy.yml@main
+    with:
+      app_name: pgvector
+      deploy_path: /opt/pgvector
+      skip_pull: true
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+      VPS_PORT: ${{ secrets.VPS_PORT }}
+      APP_ENV: ${{ secrets.APP_ENV }}
