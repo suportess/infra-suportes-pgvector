@@ -1,0 +1,59 @@
+name: Reset (apaga volume e reinicializa)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Digite "resetar" para confirmar — apaga todos os dados do pgvector-rag'
+        required: true
+
+jobs:
+  reset:
+    name: Reset pgvector-rag
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'resetar'
+
+    steps:
+      - name: Reset volume e reinicializa banco na VPS
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_ENV_CONTENT: ${{ secrets.APP_ENV }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
+          envs: APP_ENV_CONTENT
+          script: |
+            set -e
+            cd /opt/pgvector
+
+            echo "Parando container..."
+            docker compose down || true
+
+            echo "Removendo volume corrompido..."
+            docker volume rm pgvector_pgvector_data || true
+
+            echo "Recriando .env.app..."
+            if [ -n "$APP_ENV_CONTENT" ]; then
+              echo "$APP_ENV_CONTENT" > .env.app
+              chmod 600 .env.app
+            fi
+
+            echo "Subindo pgvector do zero..."
+            docker compose up -d
+
+            echo "Aguardando banco ficar healthy..."
+            sleep 10
+            docker compose ps
+
+            echo "Reconectando à infra-net..."
+            docker network connect infra-net pgvector-rag 2>/dev/null || true
+
+            echo "Reset concluído!"
+
+      - name: Resumo
+        run: |
+          echo "### ✅ Reset concluído!" >> $GITHUB_STEP_SUMMARY
+          echo "O volume foi apagado e o banco reinicializado do zero." >> $GITHUB_STEP_SUMMARY
+          echo "Reinicie o app-suportes-rag-dbamv para reconectar." >> $GITHUB_STEP_SUMMARY
