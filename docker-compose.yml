@@ -6,17 +6,12 @@ services:
     env_file:
       - path: .env.app
         required: false
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgvector_data:/var/lib/postgresql/data
     networks:
       - infra-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ragdb"]
       interval: 10s
       timeout: 5s
       retries: 5
